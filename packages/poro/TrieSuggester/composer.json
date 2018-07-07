@@ -1,0 +1,13 @@
+{
+    "name": "tinyporo/trie-suggester",
+    "description": "Example with Trie",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tinyporo",
+            "email": "ngophuongtuan@gmail.com"
+        }
+    ],
+    "require": {}
+}
