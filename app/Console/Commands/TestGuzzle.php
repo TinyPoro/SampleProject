@@ -3,10 +3,9 @@
 namespace App\Console\Commands;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Pool;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
+use Poro\TrieSuggester\TrieSuggester;
 use Symfony\Component\DomCrawler\Crawler;
 
 class TestGuzzle extends Command
@@ -16,7 +15,7 @@ class TestGuzzle extends Command
      *
      * @var string
      */
-    protected $signature = 'test:guzzle';
+    protected $signature = 'run:trie';
 
     /**
      * The console command description.
@@ -48,92 +47,44 @@ class TestGuzzle extends Command
     public function handle()
     {
         //read site list
-        $site_file = fopen('sites.txt', 'r');
-        $site_list = [];
+        $lang_file = fopen('languages.txt', 'r');
+        $lang_list = [];
 
-        while(! feof($site_file))
+        while(! feof($lang_file))
         {
-            $site = fgets($site_file);
-            $site = trim($site);
-            $site_list[] = $site;
+            $lang = fgets($lang_file);
+            $lang = trim($lang);
+
+            if($lang) $lang_list[] = $lang;
         }
 
-        fclose($site_file);
+        $trie_suggester = new TrieSuggester();
+        $trie_suggester->loadDict($lang_list);
 
-        //run no async
-        echo "No Async\n";
-        $time_start = microtime(true);
-
-        $this->noAsync($site_list);
-
-        $time_end = microtime(true);
-        echo ($time_end-$time_start) . "\n";
-
-        //run async
-        echo "Async (5 concurrency)\n";
-        $time_start = microtime(true);
-
-        $this->async($site_list,5);
-
-        $time_end = microtime(true);
-        echo ($time_end-$time_start) . "\n";
-
-        echo "Async (10 concurrency)\n";
-        $time_start = microtime(true);
-
-        $this->async($site_list,10);
-
-        $time_end = microtime(true);
-        echo ($time_end-$time_start) . "\n";
-    }
-
-    public function noAsync($site_list){
-        foreach($site_list as $site){
-            try{
-                $res = $this->client->get($site);
-                $this->getHeaderTag($res->getBody()->getContents());
-            }catch (\Exception $e){
-                \Log::info($e->getMessage());
-            }
+        foreach($trie_suggester->suggest('b') as $l){
+            dump($l);
         }
+
+        fclose($lang_file);
+
+        return null;
     }
 
-    public function async($site_list, $concurrency){
-        $pool = new Pool($this->client, $this->genRequest($site_list), [
-            'concurrency' => $concurrency,
-            'fulfilled' => function ($res, $index) {
-                $this->getHeaderTag($res->getBody()->getContents());
-            },
-            'rejected' => function ($reason, $index) {
-                \Log::info($reason);
-            },
-        ]);
+    public function getLanguageArray(){
+        //read site list
+        $lang_file = fopen(storage_path('languages.txt'), 'a') or die('Can not open file!');
 
-        $promise = $pool->promise();
+        try{
+            $res = $this->client->request('GET', 'https://en.wikipedia.org/wiki/List_of_programming_languages');
+            $response = $res->getBody()->getContents();
 
-        $promise->wait();
-    }
-
-    public function genRequest($site_list){
-        foreach($site_list as $site){
-            yield new Request('GET', $site);
-        }
-    }
-
-    public function getHeaderTag($content){
-        $crawler = new Crawler($content);
-        $result = [];
-
-        $level = 1;
-
-        while(count($result) == 0 && $level <= 6){
-            $crawler->filter('h'.$level)->each( function ( Crawler $node ) use($result){
-                $result[] = $node;
+            $crawler = new Crawler($response);
+            $crawler->filter('.columns a')->each( function ( Crawler $node ) use($lang_file){
+                fwrite($lang_file,$node->text()."\n");
             });
-
-            $level++;
+        }catch (GuzzleException $e){
         }
 
-        return $result;
+        fclose($lang_file);
     }
 }

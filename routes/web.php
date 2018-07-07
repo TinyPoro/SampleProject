@@ -14,3 +14,6 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('trie', ['as' => 'show', 'uses' => 'Controller@show']);
+Route::post('trie', ['as' => 'run', 'uses' => 'Controller@run']);
