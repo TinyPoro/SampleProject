@@ -57,4 +57,16 @@ class TrieSuggester
         $cur_node->getAllString($result, $item);
         return $result;
     }
+
+    public function alternateSuggest($item){
+        $result = [];
+
+        $this->root->getAllString($result, '');
+
+        $result = array_filter($result, function($string) use ($item){
+            return stripos($string, $item) === 0;
+        });
+
+        return array_values($result);
+    }
 }
