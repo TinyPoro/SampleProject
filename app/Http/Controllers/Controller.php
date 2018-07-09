@@ -41,9 +41,13 @@ class Controller extends BaseController
 
     public function run(Request $request){
         $input = $request->get('input');
+        $name = $request->get('name');
 
         $start = microtime(true);
-        $data = $this->trie_suggester->suggest($input);
+
+        $data = [];
+        if($name == 'suggest') $data = $this->trie_suggester->suggest($input);
+        if($name == 'alternateSuggest') $data = $this->trie_suggester->alternateSuggest($input);
         $end = microtime(true);
 
         return [

@@ -1,11 +1,16 @@
 @extends('layouts.layout')
 @section('content')
     <div class="container">
+        <h2>Tìm kiếm ngôn ngữ</h2>
         <form onSubmit="return formstop();">
             <div class="row">
                 <div class="col">
-                    <label for="input">Ngôn ngữ tìm kiếm</label>
-                    <input id="input" name="input" type="text" class="form-control" placeholder="Ngôn ngữ lập trình">
+                    <label for="input">Prefix</label>
+                    <input id="input" name="suggest" type="text" class="form-control" placeholder="Ngôn ngữ lập trình">
+                </div>
+                <div class="col">
+                    <label for="input">Contain</label>
+                    <input id="input" name="alternateSuggest" type="text" class="form-control" placeholder="Ngôn ngữ lập trình">
                 </div>
             </div>
         </form>
@@ -26,18 +31,19 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
-        $('#input').change(function(){
-            let input = $('#input').val();
-
-
+        $('input').change(function(){
+            let input = $(this).val();
+            let name = $(this).attr('name');
+console.log(input);
+console.log(name);
             if(input){
                 $.ajax({
                     method: 'POST',
                     url: "trie",
-                    data: {input:input},
+                    data: {input:input, name:name},
                     success: function(result){
                         let data = "<div>";
-
+                        console.log(result);
                         data += "<h2>"+result['time']+"</h2>";
                         data += "<ul>";
                         result['data'].forEach((ele) => {
