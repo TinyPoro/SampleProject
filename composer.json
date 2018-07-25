@@ -25,7 +25,8 @@
             "database/factories"
         ],
         "psr-4": {
-            "App\\": "app/"
+            "App\\": "app/",
+            "Poro\\TitleDetector\\": "packages/poro/title_detector/src"
         }
     },
     "autoload-dev": {
