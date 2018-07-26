@@ -93,7 +93,7 @@ class Page
             if($temp) $this->last_line = $line;
         });
 
-        $this->addBox();
+        if(count($this->cur_box->lines) > 0) $this->addBox();
 
         //sắp xếp lại câu theo thứ tự
         if(count($this->main_left) == 1) uasort($this->lines, array($this, 'sortComponent'));
@@ -105,6 +105,8 @@ class Page
 
         if($line->top >= $this->last_line->top - 1 && $line->top <= $this->last_line->top + 1) return false;
         if($line->bottom >= $this->last_line->bottom - 1 && $line->bottom <= $this->last_line->bottom + 1) return false;
+
+        if($line->font_id == $this->last_line->font_id) return false;
 
         if($this->cur_box->same_left){
             if($line->left != $this->cur_box->same_left) return true;

@@ -40,7 +40,7 @@ class TestTitle extends Command
     public function handle()
     {
         $file = $this->option('file');
-        $file = storage_path('input/id6.pdf');
+        $file = storage_path('input/id12.pdf');
 
         $title_detector = new TitleDetector($file);
         $title_detector->detectTitle();

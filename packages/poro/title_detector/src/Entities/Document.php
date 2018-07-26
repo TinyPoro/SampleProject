@@ -99,14 +99,20 @@ class Document
         //lấy chiều cao lớn nhất
         $max_height = max($box_heights);
 
+        //lấy chiều cao thấp nhất
+        $count_height = array_count_values($box_heights);
+        if(count($count_height) > 1) $min_height = min($box_heights);
+        else $min_height = 0;
+
         //lấy các box có chiều cao lớn nhất
-        $boxes = array_filter($page->boxes, function($box) use($max_height) {return $box->average_height > ($max_height*0.8);});
+        $boxes = array_filter($page->boxes, function($box) use($max_height, $min_height) {return $box->average_height > ($max_height*0.8) && $box->average_height > $min_height;});
 
         foreach($boxes as $box){
             $check = $this->detector->check($box->text_content);
             if($check['success'] == 'false') continue;
 
             if(str_word_count($box->text_content) < 5) continue;
+            if(strlen($box->text_content) > 70) continue;
 
             if(preg_match('/^[a-záàãảạăắằẵẳặâấầẫảạđéèẻẽẹêểếềệễíìĩỉịôốổồỗộơớờởỡợóòỏõọuúùũủụưứừửựữýỳỷỹỵ]/u', $box->text_content)) continue;
 
