@@ -8,6 +8,7 @@
 
 namespace Poro\TitleDetector\Entities;
 
+use Poro\TitleDetector\Entities\Component\Box;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Document
@@ -21,9 +22,14 @@ class Document
     /** @var Page */
     public $pages;
 
+    /** @var Crawler */
     public $xml;
 
     public $detector;
+
+    public $font_sizes;
+    public $normal_font_size;
+    public $max_font_size;
 
     public function __construct($path, $language = 'id')
     {
@@ -33,7 +39,6 @@ class Document
         try{
             $this->detector = $this->resoleDetectorClass($language);
         }catch (\Exception $e){
-            \Log::error("resolve detector class::" . $e->getMessage());
             throw new \Exception("resolve detector class::" . $e->getMessage());
         }
     }
@@ -52,12 +57,47 @@ class Document
         $this->xml = new Crawler();
         $this->xml->addXmlContent($xml);
 
-        $this->importPagesFromXml();
+        try{
+            $this->loadFontSizeFromXml();
+            $this->importPagesFromXml();
+            $this->detectNormalFontSize();
+            $this->detectMaxFontSize();
+        }catch (\Exception $e){
+            throw new \Exception($e->getMessage());
+        }
     }
 
-    private function importPagesFromXml(){
-
+    private function loadFontSizeFromXml(){
         $this->xml->filter('page')->each( function ( Crawler $node ) {
+            $node->filter( 'fontspec')->each( function ( Crawler $node){
+                $font_id = intval($node->attr('id'));
+                $font_size = intval($node->attr('size'));
+
+                $this->font_sizes[] = [
+                    'id' => $font_id,
+                    'size' => $font_size
+                ];
+            });
+        });
+
+        if(count($this->font_sizes) == 0) throw new \Exception('Can not get document font size');
+    }
+
+    public function getFontSize($fond_id){
+        foreach($this->font_sizes as $font_size){
+            if($font_size['id'] == $fond_id) return $font_size['size'];
+        }
+
+        return 0;
+    }
+
+
+    private $max_page = 2;
+
+    private function importPagesFromXml(){
+        $this->xml->filter('page')->each( function ( Crawler $node ) {
+            if($this->max_page == 0) return;
+
             $top = intval($node->attr( 'top'));
             $left = intval($node->attr( 'left'));
             $height = intval($node->attr( 'height'));
@@ -69,7 +109,46 @@ class Document
             $page->loadLinesFromNode($node);
 
             $this->push($page);
+
+            $this->max_page--;
         });
+    }
+
+    private function detectNormalFontSize(){
+        $font_sizes = [];
+
+        foreach($this->pages as $page){
+            foreach($page->lines as $line){
+                if(!$line->font_size) continue;
+
+                $font_sizes[] = $line->font_size;
+            }
+        }
+
+        $font_sizes = array_count_values($font_sizes);
+        if(count($font_sizes) > 0) $max = max($font_sizes);
+        else return;
+
+        foreach($font_sizes as $font => $value){
+            if($value == $max) $this->normal_font_size[] = $font;
+        }
+
+        $this->normal_font_size = max($this->normal_font_size);
+    }
+
+    public function detectMaxFontSize(){
+        if(count($this->pages) == 0) throw new \Exception('Can not get max font size');
+
+        foreach($this->pages as $page){
+            $box_font_sizes = [];
+
+            foreach($page->boxes as $box){
+                $box_font_sizes[] = $box->average_font_size;
+            }
+
+            //lấy chiều cao lớn nhất
+            $this->max_font_size = max($box_font_sizes);
+        }
     }
 
     public function push(Page $page){
@@ -85,34 +164,21 @@ class Document
             if($max_box) break;
         }
 
-        if($max_box) dd($max_box->text_content);
-        else throw new \Exception('Can not detect title!');
+        if($max_box) echo $max_box->text_content."\n";
+        else echo "Can not detect title!\n";
     }
 
     public function findMaxHeightBox(Page $page){
-        $box_heights = [];
-
-        foreach($page->boxes as $box){
-            $box_heights[] = $box->average_height;
-        }
-
-        //lấy chiều cao lớn nhất
-        $max_height = max($box_heights);
-
-        //lấy chiều cao thấp nhất
-        $count_height = array_count_values($box_heights);
-        if(count($count_height) > 1) $min_height = min($box_heights);
-        else $min_height = 0;
-
         //lấy các box có chiều cao lớn nhất
-        $boxes = array_filter($page->boxes, function($box) use($max_height, $min_height) {return $box->average_height > ($max_height*0.8) && $box->average_height > $min_height;});
+        $boxes = array_filter($page->boxes, function($box) {return ($box->average_font_size > ($this->max_font_size*0.8) && ($box->bold || $box->average_font_size > $this->normal_font_size));});
+
+        usort($boxes, array($this, 'sortBox'));
 
         foreach($boxes as $box){
             $check = $this->detector->check($box->text_content);
             if($check['success'] == 'false') continue;
 
-            if(str_word_count($box->text_content) < 5) continue;
-            if(strlen($box->text_content) > 70) continue;
+            if(str_word_count($box->text_content) < 2) continue;
 
             if(preg_match('/^[a-záàãảạăắằẵẳặâấầẫảạđéèẻẽẹêểếềệễíìĩỉịôốổồỗộơớờởỡợóòỏõọuúùũủụưứừửựữýỳỷỹỵ]/u', $box->text_content)) continue;
 
@@ -120,5 +186,14 @@ class Document
         }
 
         return null;
+    }
+
+    public function sortBox(Box $b1, Box $b2) {
+        $average_font_size1 = $b1->average_font_size;
+        $average_font_size2 = $b2->average_font_size;
+
+        if($average_font_size1 == $average_font_size2) return ($b1->bottom < $b2->bottom) ? -1 : 1;
+
+        return ($average_font_size1 < $average_font_size2) ? 1 : -1;
     }
 }

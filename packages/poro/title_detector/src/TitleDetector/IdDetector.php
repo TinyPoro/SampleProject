@@ -13,8 +13,12 @@ class IdDetector  extends AbstractDetector  {
     protected $denies_config = [
         'preg_match' => [
             [
-                'deny' => '/^(Bab|Bagian|Pelajaran|Pasal)\s+[IVX0-9]{1,2}\s*(\:|\.|–)?\s*/ui',
+                'deny' => '/^\s*(Bab|Bagian|Pelajaran|Pasal|Versi)\s+[IVX0-9]{1,2}\s*(\:|\.|–)?\s*/ui',
                 'type' => 2,
+            ],
+            [
+                'deny' => '/^\s*(pembahasan|(LATAR BELAKANG)|PENDAHULUAN)\s*$/ui',
+                'type' => 3,
             ]
         ],
         'starts' => [ // tìm từ vị trí bắt đầu

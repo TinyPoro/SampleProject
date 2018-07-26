@@ -8,24 +8,42 @@
 
 namespace Poro\TitleDetector;
 
+use Poro\TitleDetector\Converter\PdfInfo;
 use Poro\TitleDetector\Converter\PdftotextConverter;
-use Poro\TitleDetector\Entities\Component\Line;
 use Poro\TitleDetector\Entities\Document;
-use Poro\TitleDetector\Entities\Page;
-use Symfony\Component\DomCrawler\Crawler;
 
 class TitleDetector
 {
     public $converter;
+
     public $file_path;
+    public $file_name;
 
     public $document;
 
+    public $error = false;
+
     public function __construct($file, $language = 'id'){
         $this->file_path = $file;
-        $this->document = new Document($file, $language);
+        try{
+            $this->document = new Document($file, $language);
+        }catch (\Exception $e){
+            echo "Resolve detector class::" . $e->getMessage()."\n";
+        }
 
-        $this->handleDocument();
+        $this->getFileName();
+
+        try{
+            $this->handleDocument();
+        }catch (\Exception $e){
+            $this->error = true;
+            echo "Handle document error::" . $e->getMessage()."\n";
+        }
+    }
+
+    public function getFileName(){
+//        $pdf_info = new PdfInfo();
+//        dd($pdf_info->read($this->file_path));
     }
 
     public function handleDocument(){
@@ -38,7 +56,6 @@ class TitleDetector
 
             if($this->canNotGenText()) return;
         }catch (\Exception $exception){
-            \Log::info($exception->getMessage());
             throw new \Exception($exception->getMessage());
         }
     }
@@ -52,6 +69,11 @@ class TitleDetector
     }
 
     public function detectTitle(){
+        if($this->error){
+            echo "Document can not convert!\n";
+            return;
+        }
+
         $this->document->detectTitle();
     }
 
@@ -61,12 +83,13 @@ class TitleDetector
 
     public function convertPdfToHtml(){
         $this->converter = new PdftotextConverter('pdftohtml');
+
         $name_file = \File::name($this->file_path);
         $this->converter->prefix_file = str_replace(' ', '_', $name_file);
         if (!file_exists($this->file_path)){
             throw new \Exception($this->file_path . ' not exist');
         }
-        $pages = $this->converter->getHtmlPages($this->file_path);
+        $pages = $this->converter->getXmlPages($this->file_path);
 
         return $pages;
     }

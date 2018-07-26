@@ -13,15 +13,21 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class Line extends Component
 {
-    public $font_id;
+    public $font_size;
 
-    public function __construct($content, $html_content, $top, $left, $right, $bottom, $font_id = 0, $page) {
+    public $bold = false;
+
+    const BOLD_PATTERN = '/(\s*(<b>)(\s*[^\s]\s*)+(<\/b>)\s*)+/ui';
+
+    public function __construct($content, $html_content, $top, $left, $right, $bottom, $font_size = 0, $page) {
         $this->text_content = $content;
         $this->html_content = $html_content;
 
+        if(preg_match(self::BOLD_PATTERN, $html_content)) $this->bold = true;
+
         parent::__construct($top, $left, $right, $bottom, $page);
 
-        $this->font_id = $font_id;
+        $this->font_size = $font_size;
     }
 
     public static function fromNode(Crawler $node, Page $page = null){
@@ -35,7 +41,7 @@ class Line extends Component
         $left = intval($node->attr('left'));
         $bottom = $top + intval($node->attr('height'));
         $right = $left + intval($node->attr('width'));
-        $font = intval($node->attr('font'));
+        $font = $page->document->getFontSize(intval($node->attr('font')));
 
         $line = new Line( $content, $html_content, $top, $left, $right, $bottom, $font, $page);
 

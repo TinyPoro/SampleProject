@@ -17,8 +17,11 @@ class Box extends Component
 
     public $distance=false;
     public $average_height=false;
+    public $average_font_size=false;
 
     public $same_left=false;
+
+    public $bold=false;
 
     public function __construct($page) {
         parent::__construct(0, 0, 0, 0, $page);
@@ -34,7 +37,12 @@ class Box extends Component
         $this->right = max($this->right, $line->right);
         $this->bottom = max($this->bottom, $line->bottom);
 
+        if(!$this->bold && count($this->lines)==1){
+            if($line->bold) $this->bold = true;
+        }
+
         if(!$this->average_height) $this->average_height = $line->height;
+        if(!$this->average_font_size) $this->average_font_size = $line->font_size;
     }
 
     public function setDistance($distance){

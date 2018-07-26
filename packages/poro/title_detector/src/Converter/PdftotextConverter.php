@@ -22,7 +22,6 @@ class PdftotextConverter extends CanRunCommand {
 		'-c' => true,
         '-stdout' => true,
         '-xml' => true,
-		'-l' => 2,
 	];
 	
 	public function __construct($bin = 'pdfinfo', $cache = '') {
@@ -41,7 +40,7 @@ class PdftotextConverter extends CanRunCommand {
 		}
 	}
 
-    public function getHtmlPages($path, $page = 0){
+    public function getXmlPages($path, $page = 0){
         /** @var $file \File*/
         $file_name = \File::name($path);
         $this->checkWritable();
@@ -54,15 +53,48 @@ class PdftotextConverter extends CanRunCommand {
         $command = $this->buildCommand($this->tmp_path);
         $this->run($command);
 
-        $page_path = $this->tmp_folder . DIRECTORY_SEPARATOR . $file_name . ".xml";
+        $xml_path = $this->tmp_folder . DIRECTORY_SEPARATOR . $file_name . ".xml";
+        $this->correctXml($xml_path);
 
-        $content = file_get_contents($page_path);
+        $content = file_get_contents($xml_path);
         $content = $this->utf8_for_xml($content);
         return $content;
     }
 
     function utf8_for_xml($string)  {
         return preg_replace ('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $string);
+    }
+
+    function correctXml($xml_path){
+        libxml_use_internal_errors(true);
+        $sxe = simplexml_load_file($xml_path);
+        if (false === $sxe) {
+            $delete_lines = [];
+
+            foreach (libxml_get_errors() as $error) {
+                if (preg_match('/(?<=line\s)\d+/', $error->message, $matches)) $delete_lines[] = $matches[0];
+            }
+
+            $delete_lines = array_unique($delete_lines);
+
+            $this->deleteLines($xml_path, $delete_lines);
+        }
+    }
+
+    public function deleteLines($fname, $delete_lines){
+        $line_no = 0;
+        $out = '';
+
+        $lines = file($fname);
+        foreach($lines as $line) {
+            $line_no++;
+            if(in_array($line_no, $delete_lines)) $out .= "\n";
+            else $out .= $line;
+        }
+
+        $f = fopen($fname, "w");
+        fwrite($f, $out);
+        fclose($f);
     }
 
 	/** Helper functions */

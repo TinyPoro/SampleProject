@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "10c15393ca2141223680b254198bb763",
+    "content-hash": "18fdde542e7140bc2959bd8f0b4bc041",
     "packages": [
         {
             "name": "dnoegel/php-xdg-base-dir",
@@ -3602,6 +3602,52 @@
                 "xunit"
             ],
             "time": "2018-05-29T13:50:43+00:00"
+        },
+        {
+            "name": "poro/language-detection",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TinyPoro/LanguageDetector.git",
+                "reference": "867aa74b91e27517e7bb5245ff6df9a05990986f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TinyPoro/LanguageDetector/zipball/867aa74b91e27517e7bb5245ff6df9a05990986f",
+                "reference": "867aa74b91e27517e7bb5245ff6df9a05990986f",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": "^7"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "LanguageDetection\\": "src/LanguageDetection"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Patrick Schur",
+                    "email": "patrick_schur@outlook.de"
+                }
+            ],
+            "description": "A language detection library for PHP. Detects the language from a given text string.",
+            "homepage": "https://github.com/patrickschur/language-detection",
+            "keywords": [
+                "detect",
+                "detection",
+                "language"
+            ],
+            "time": "2018-07-26T04:16:35+00:00"
         },
         {
             "name": "sebastian/code-unit-reverse-lookup",

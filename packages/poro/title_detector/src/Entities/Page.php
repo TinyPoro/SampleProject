@@ -103,27 +103,52 @@ class Page
     public function endBox(Line $line){
         if(!$this->last_line) return false;
 
-        if($line->top >= $this->last_line->top - 1 && $line->top <= $this->last_line->top + 1) return false;
-        if($line->bottom >= $this->last_line->bottom - 1 && $line->bottom <= $this->last_line->bottom + 1) return false;
+        //nếu top/bottom chênh không quá 1 đơn vị thì ghép
+        if($this->approxiateIn($line->top, $this->last_line->top, 1)) return false;
+        if($this->approxiateIn($line->bottom, $this->last_line->bottom, 1)) return false;
 
-        if($line->font_id == $this->last_line->font_id) return false;
+        //nếu fontsize chênh không quá 2 đơn vị thì ghép
+        if($this->approxiateIn($line->font_size, $this->last_line->font_size, 2)) return false;
 
+        //nếu box hiện tại đang cùng left mà dòng tiếp lệch thì dừng
         if($this->cur_box->same_left){
             if($line->left != $this->cur_box->same_left) return true;
         }
 
+        //nếu chênh quá 2 đơn vị chiều cao thì dừng
         if($this->cur_box->average_height) {
-            if($line->height <= ($this->cur_box->average_height - 2) || $line->height >= ($this->cur_box->average_height + 2)) return true;
+            if($this->approxiateOut($line->height, $this->cur_box->average_height, 2)) return true;
+        }
+
+        //nếu chênh quá 2 đơn vị font size thì dừng
+        if($this->cur_box->average_font_size) {
+            if($this->approxiateOut($line->font_size, $this->cur_box->average_font_size, 2)) return true;
         }
 
         $distance  = $line->bottom - $this->last_line->bottom;
+        //nếu dòng quả nhỏ so với khoảng cách với dòng trước thì dừng
         if($distance > $line->height + 10) return true;
 
+        //nếu box hiện tại không có khoảng cách thì tiếp
         if(!$this->cur_box->distance) return false;
 
-        if($distance >= ($this->cur_box->distance - 5) && $distance <= ($this->cur_box->distance + 5)) return false;
+        //nếu khoảng cách chênh không quá khoảng cách trung bình box 5 đơn vị thì tiếp
+        if($this->approxiateIn($distance, $this->cur_box->distance, 5)) return false;
+
+        //nếu in đậm thì ghép
+        if($line->bold && $this->cur_box->bold) return false;
 
         return true;
+    }
+
+    public function approxiateIn($a, $b, $d){
+        if($a >= $b - $d && $a <= $b + $d) return true;
+        return false;
+    }
+
+    public function approxiateOut($a, $b, $d){
+        if($a <= $b - $d || $a >= $b + $d) return true;
+        return false;
     }
 
     public function addLine(Line $line){

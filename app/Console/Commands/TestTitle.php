@@ -13,7 +13,8 @@ class TestTitle extends Command
      * @var string
      */
     protected $signature = 'test:title
-    {--file= : Lựa chọn file để chạy }';
+    {--file= : Lựa chọn file để chạy }
+    {--folder= : Lựa chọn folder để chạy }';
 
     /**
      * The console command description.
@@ -39,10 +40,24 @@ class TestTitle extends Command
      */
     public function handle()
     {
+        $folder = $this->option('folder');
         $file = $this->option('file');
-        $file = storage_path('input/id12.pdf');
 
-        $title_detector = new TitleDetector($file);
-        $title_detector->detectTitle();
+        if($folder){
+            $folder = storage_path($folder);
+            $files = scandir($folder);
+            $files = array_diff($files, array('..', '.', '.gitignore'));
+        }else{
+            $folder = storage_path('input');
+            $files=[$file.'.pdf'];
+        }
+
+
+        foreach($files as $file){
+            $file_name = $folder.'/'.$file;
+            echo "File: $file_name \n";
+            $title_detector = new TitleDetector($file_name);
+            $title_detector->detectTitle();
+        }
     }
 }
