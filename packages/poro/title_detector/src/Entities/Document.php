@@ -8,6 +8,7 @@
 
 namespace Poro\TitleDetector\Entities;
 
+use LanguageDetection\Language;
 use Poro\TitleDetector\Entities\Component\Box;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -31,16 +32,9 @@ class Document
     public $normal_font_size;
     public $max_font_size;
 
-    public function __construct($path, $language = 'id')
+    public function __construct($path)
     {
         $this->path = $path;
-        $this->language = $language;
-
-        try{
-            $this->detector = $this->resoleDetectorClass($language);
-        }catch (\Exception $e){
-            throw new \Exception("resolve detector class::" . $e->getMessage());
-        }
     }
 
     protected function resoleDetectorClass($language){
@@ -60,6 +54,7 @@ class Document
         try{
             $this->loadFontSizeFromXml();
             $this->importPagesFromXml();
+            $this->detectLanguage();
             $this->detectNormalFontSize();
             $this->detectMaxFontSize();
         }catch (\Exception $e){
@@ -112,6 +107,29 @@ class Document
 
             $this->max_page--;
         });
+    }
+
+    private function detectLanguage(){
+        $text = '';
+
+        foreach($this->pages as $page){
+            foreach($page->lines as $line){
+                $text .= $line->text_content.' ';
+            }
+        }
+
+        $language = new Language();
+        $language->setMaxNgrams(9000);
+        $result = array_keys($language->detect($text)->bestResults()->close());
+
+        if(count($result) == 0) throw new \Exception("Can not detect language");
+        $this->language = $result[0];
+
+        try{
+            $this->detector = $this->resoleDetectorClass($this->language);
+        }catch (\Exception $e){
+            throw new \Exception("resolve detector class::" . $e->getMessage());
+        }
     }
 
     private function detectNormalFontSize(){
