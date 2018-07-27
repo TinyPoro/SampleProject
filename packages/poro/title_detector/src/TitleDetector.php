@@ -23,10 +23,11 @@ class TitleDetector
 
     public $error = false;
 
-    public function __construct($file, $language = 'id'){
+    public function __construct($file){
         $this->file_path = $file;
+
         try{
-            $this->document = new Document($file, $language);
+            $this->document = new Document($file);
         }catch (\Exception $e){
             echo "Resolve detector class::" . $e->getMessage()."\n";
         }

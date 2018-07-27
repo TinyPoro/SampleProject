@@ -17,8 +17,12 @@ class IdDetector  extends AbstractDetector  {
                 'type' => 2,
             ],
             [
-                'deny' => '/^\s*(pembahasan|(LATAR BELAKANG)|PENDAHULUAN)\s*$/ui',
+                'deny' => '/^\s*(NASIONAL|pembahasan|(LATAR BELAKANG)|PENDAHULUAN|(METODE PENELITIAN)|TENTANG|(REPUBLIK INDONESIA))\s*$/ui',
                 'type' => 3,
+            ],
+            [
+                'deny' => '/NOMOR \d+ TAHUN \d+/ui',
+                'type' => 4,
             ]
         ],
         'starts' => [ // tìm từ vị trí bắt đầu
