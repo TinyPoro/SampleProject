@@ -3,6 +3,8 @@
 /public/storage
 /storage/*.key
 /storage/tmp
+/storage/input
+/storage/sample
 /vendor
 /.idea
 /.vagrant
