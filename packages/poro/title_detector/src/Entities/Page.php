@@ -103,6 +103,9 @@ class Page
     public function endBox(Line $line){
         if(!$this->last_line) return false;
 
+        //nếu in đậm thì ghép
+        if(!$line->bold && $this->cur_box->bold) return true;
+
         //nếu top/bottom chênh không quá 1 đơn vị thì ghép
         if($this->approxiateIn($line->top, $this->last_line->top, 1)) return false;
         if($this->approxiateIn($line->bottom, $this->last_line->bottom, 1)) return false;
