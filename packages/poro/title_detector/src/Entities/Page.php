@@ -95,6 +95,8 @@ class Page
 
         if(count($this->cur_box->lines) > 0) $this->addBox();
 
+        $this->computeMargin();
+
         //sắp xếp lại câu theo thứ tự
         if(count($this->main_left) == 1) uasort($this->lines, array($this, 'sortComponent'));
         $this->lines = array_values($this->lines);
@@ -180,6 +182,23 @@ class Page
 
     public function appendBox(Box $box){
         $this->boxes[] = $box;
+    }
+
+    public function computeMargin(){
+        foreach($this->lines as $key => $line) {
+            if($this->margin_top > $line->top || $key == 0){
+                $this->margin_top = $line->top;
+            }
+            if($this->margin_right < $line->right){
+                $this->margin_right = $line->right;
+            }
+            if($this->margin_bottom < $line->bottom){
+                $this->margin_bottom = $line->bottom;
+            }
+            if($this->margin_left > $line->left || $key == 0){
+                $this->margin_left = $line->left;
+            }
+        };
     }
 
     public function sortComponent(Component $p1, Component $p2) {

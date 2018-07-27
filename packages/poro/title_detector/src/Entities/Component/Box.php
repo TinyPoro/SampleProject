@@ -8,9 +8,6 @@
 
 namespace Poro\TitleDetector\Entities\Component;
 
-use Poro\TitleDetector\Entities\Page;
-use Symfony\Component\DomCrawler\Crawler;
-
 class Box extends Component
 {
     public $lines;
@@ -24,6 +21,8 @@ class Box extends Component
     public $bold=false;
 
     public $tf_idf=0;
+
+    public $center = false;
 
     public function __construct($page) {
         parent::__construct(0, 0, 0, 0, $page);
