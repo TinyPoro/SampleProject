@@ -19,6 +19,9 @@ class Line extends Component
 
     const BOLD_PATTERN = '/(\s*(<b>)(\s*[^\s]\s*)+(<\/b>)\s*)+/ui';
 
+    public $id;
+    public $tf_idf=0;
+
     public function __construct($content, $html_content, $top, $left, $right, $bottom, $font_size = 0, $page) {
         $this->text_content = $content;
         $this->html_content = $html_content;

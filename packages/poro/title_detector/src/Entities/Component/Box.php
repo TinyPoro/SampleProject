@@ -23,6 +23,8 @@ class Box extends Component
 
     public $bold=false;
 
+    public $tf_idf=0;
+
     public function __construct($page) {
         parent::__construct(0, 0, 0, 0, $page);
     }

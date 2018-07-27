@@ -9,6 +9,7 @@
 namespace Poro\TitleDetector\Entities;
 
 use LanguageDetection\Language;
+use Poro\Tf_Idf\TF_IDF;
 use Poro\TitleDetector\Entities\Component\Box;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -91,8 +92,6 @@ class Document
 
     private function importPagesFromXml(){
         $this->xml->filter('page')->each( function ( Crawler $node ) {
-            if($this->max_page == 0) return;
-
             $top = intval($node->attr( 'top'));
             $left = intval($node->attr( 'left'));
             $height = intval($node->attr( 'height'));
@@ -101,7 +100,7 @@ class Document
             $page = new Page( $top, $width, $height, $left);
             $page->setDocument($this);
             $page->setNumberPage($node->attr('number'));
-            $page->loadLinesFromNode($node);
+            if($this->max_page > 0) $page->loadLinesFromNode($node);
 
             $this->push($page);
 
@@ -157,16 +156,17 @@ class Document
     public function detectMaxFontSize(){
         if(count($this->pages) == 0) throw new \Exception('Can not get max font size');
 
-        foreach($this->pages as $page){
-            $box_font_sizes = [];
+        $box_font_sizes = [];
 
+
+        foreach($this->pages as $page){
             foreach($page->boxes as $box){
                 $box_font_sizes[] = $box->average_font_size;
             }
-
-            //lấy chiều cao lớn nhất
-            $this->max_font_size = max($box_font_sizes);
         }
+
+        //lấy chiều cao lớn nhất
+        $this->max_font_size = max($box_font_sizes);
     }
 
     public function push(Page $page){
@@ -174,6 +174,8 @@ class Document
     }
 
     public function detectTitle(){
+        $this->calTfIdf();
+
         $max_box = null;
 
         foreach ($this->pages as $page){
@@ -184,6 +186,37 @@ class Document
 
         if($max_box) echo $max_box->text_content."\n";
         else echo "Can not detect title!\n";
+    }
+
+    protected function calTfIdf(){
+        $tf_idf = new TF_IDF($this->language);
+
+        foreach ($this->pages as $page){
+            foreach($page->lines as $line){
+                /** @var $box Box */
+                $line->id = $tf_idf->addDocText($line->text_content);
+            }
+        }
+
+        foreach ($this->pages as $page){
+            foreach($page->lines as $line){
+                /** @var $box Line */
+                $line->tf_idf = $tf_idf->getDocTfIdf($line->id);
+            }
+        }
+
+        foreach ($this->pages as $page){
+            if($page->number > 2) break;
+
+            foreach($page->boxes as $box){
+                foreach($box->lines as $line){
+                    /** @var $line Line */
+                    $box->tf_idf += $line->tf_idf;
+                }
+
+                $box->tf_idf /= str_word_count($box->text_content);
+            }
+        }
     }
 
     public function findMaxHeightBox(Page $page){
