@@ -217,9 +217,9 @@ class Document
                 /** @var $line Line */
                 $text .= $line->text_content.' ';
             }
-
-            $this->docId = $tf_idf->addDocText($text);
         }
+
+        $this->docId = $tf_idf->addDocText($text);
 
         foreach ($this->pages as $page){
             if($page->number > 2) break;
