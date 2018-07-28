@@ -72,17 +72,21 @@ class Page
             $line = Line::fromNode( $node, $this);
 
             if($line) {
-                if($this->endBox($line)){
-                    $this->addBox();
+                //từ trang 3 trở đi không thêm box
+                if($this->number > 2) $this->appendLine($line);
+                else{
+                    if($this->endBox($line)){
+                        $this->addBox();
 
-                    $this->addLine($line);
-                }else{
-                    $this->addLine($line);
+                        $this->addLine($line);
+                    }else{
+                        $this->addLine($line);
+                    }
                 }
             }else{
+                if($this->number > 2) return;
+
                 $bottom = intval($node->attr('top')) + intval($node->attr('height'));
-
-
 
                 if(count($this->cur_box->lines) > 0) {
                     if($bottom == last($this->cur_box->lines)->bottom) $temp = false;
@@ -95,7 +99,11 @@ class Page
 
         if(count($this->cur_box->lines) > 0) $this->addBox();
 
+        //tính toàn margin page
         $this->computeMargin();
+
+        //lọc các box không có từ
+        $this->boxes = array_filter($this->boxes, function($box){return str_word_count($box->text_content) > 1;});
 
         //sắp xếp lại câu theo thứ tự
         if(count($this->main_left) == 1) uasort($this->lines, array($this, 'sortComponent'));

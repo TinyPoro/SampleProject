@@ -91,9 +91,6 @@ class Document
         return 0;
     }
 
-
-    private $max_page = 2;
-
     private function importPagesFromXml(){
         $this->xml->filter('page')->each( function ( Crawler $node ) {
             $top = intval($node->attr( 'top'));
@@ -104,11 +101,9 @@ class Document
             $page = new Page( $top, $width, $height, $left);
             $page->setDocument($this);
             $page->setNumberPage($node->attr('number'));
-            if($this->max_page > 0) $page->loadLinesFromNode($node);
+            $page->loadLinesFromNode($node);
 
             $this->push($page);
-
-            $this->max_page--;
         });
     }
 
@@ -184,6 +179,8 @@ class Document
             }
         }
 
+        if(count($box_font_sizes) == 0) throw new \Exception("Document can not get box!");
+
         //lấy chiều cao lớn nhất
         $this->max_font_size = max($box_font_sizes);
     }
@@ -198,12 +195,14 @@ class Document
         $max_box = null;
 
         foreach ($this->pages as $page){
+            if($page->number > 2) break;
+
             $max_box = $this->findTitleBox($page);
 
             if($max_box) break;
         }
 
-        if($max_box) echo $max_box->text_content."\n";
+        if($max_box) dump($max_box->text_content."\n");
         else echo "Can not detect title!\n";
     }
 
@@ -239,7 +238,7 @@ class Document
     }
 
     public function standardText($text){
-        $text = strtolower($text);
+        $text = mb_strtolower($text);
         $text = trim($text);
 
         $text = str_replace(['-', '.', ';', ',', '?', ':', '"', '!', '(', ')', '[', ']', '_', '-', '\'', '{', '}', '/'], '', $text);
@@ -250,16 +249,21 @@ class Document
     }
 
     public function findTitleBox(Page $page){
+        $detector = $this->detector;
+
+        //lọc các box không hợp lệ
+        $boxes = array_filter($page->boxes, function($box) use($detector) {return $detector->check($box->text_content)['success'] == 'true';});
+
         $max_tf_idf = null;
 
-        foreach($page->boxes as $box) {
+        foreach($boxes as $box) {
             if(!$max_tf_idf || $box->tf_idf > $max_tf_idf) $max_tf_idf = $box->tf_idf;
         }
 
         if(!$max_tf_idf) throw new \Exception('Can not get max tf idf!');
 
         //lấy các box có chiều cao lớn nhất
-        $boxes = array_filter($page->boxes, function($box) use($max_tf_idf) {return $this->filterBox($box, $max_tf_idf);});
+        $boxes = array_filter($boxes, function($box) use($max_tf_idf) {return $this->filterBox($box, $max_tf_idf);});
 
         usort($boxes, array($this, 'sortBox'));
 
@@ -273,21 +277,18 @@ class Document
     }
 
     protected function filterBox(Box $box, $max_tf_idf){
-        $check = $this->detector->check($box->text_content);
-        if($check['success'] == 'false') return false;
-
         if(str_word_count($box->text_content) < 2) return false;
 
         if(preg_match('/^[a-záàãảạăắằẵẳặâấầẫảạđéèẻẽẹêểếềệễíìĩỉịôốổồỗộơớờởỡợóòỏõọuúùũủụưứừửựữýỳỷỹỵ]/u', $box->text_content)) return false;
 
-        if($box->average_font_size > ($this->max_font_size*0.8)){
+        if($box->tf_idf >= $max_tf_idf - 0.5) return true;
+
+        if($box->average_font_size > ($this->max_font_size*0.7)){
             if($box->center) return true;
 
             if($box->bold) return true;
 
             if($box->average_font_size > $this->normal_font_size) return true;
-
-            if($box->tf_idf >= $max_tf_idf - 0.5) return true;
         }
 
         return false;

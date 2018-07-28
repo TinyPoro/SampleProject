@@ -14,14 +14,18 @@ class IdDetector  extends AbstractDetector  {
         'preg_match' => [
             [
                 'deny' => '/^\s*(Bab|Bagian|Pelajaran|Pasal|Versi)\s+[IVX0-9]{1,2}\s*(\:|\.|–)?\s*/ui',
+                'type' => 1,
+            ],
+            [
+                'deny' => '/^\s*((Tugas Akhir)|pembahasan|(LATAR BELAKANG)|PENDAHULUAN|(METODE PENELITIAN)|TENTANG)\s*$/ui',
                 'type' => 2,
             ],
             [
-                'deny' => '/^\s*(NASIONAL|pembahasan|(LATAR BELAKANG)|PENDAHULUAN|(METODE PENELITIAN)|TENTANG|(REPUBLIK INDONESIA))\s*$/ui',
+                'deny' => '/NOMOR \d+ TAHUN \d+/ui',
                 'type' => 3,
             ],
             [
-                'deny' => '/NOMOR \d+ TAHUN \d+/ui',
+                'deny' => '/(^|\s)(MENTERI|(REPUBLIK INDONESIA))(\s|$)/ui',
                 'type' => 4,
             ]
         ],

@@ -13,7 +13,19 @@ abstract class AbstractDetector {
         'preg_match' => [
             [
                 'deny' => '/(?<!^)(Chapter|Section|Lesson)\s+[IVX0-9]{1,2}\s*(\:|\.)?\s*/u',
-                'type' => 1
+                'type' => 10
+            ],
+            [
+                'deny' => '/^(([0-9]){1,2}\.)+(([0-9]){1,2})*\.?\s*/',
+                'type' => 11
+            ],
+            [
+                'deny' => '/^[A-Ha-h][.:,)-]+(?!\w)\s+/',
+                'type' => 12
+            ],
+            [
+                'deny' => '/^(([IVX]){1,4}\.)+(([IVX]){1,4})*\.?\s*/',
+                'type' => 13
             ]
         ],
         'starts' => [ // tìm từ vị trí bắt đầu
