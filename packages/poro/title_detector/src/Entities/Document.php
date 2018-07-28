@@ -198,7 +198,7 @@ class Document
         $max_box = null;
 
         foreach ($this->pages as $page){
-            $max_box = $this->findMaxHeightBox($page);
+            $max_box = $this->findTitleBox($page);
 
             if($max_box) break;
         }
@@ -208,7 +208,7 @@ class Document
     }
 
     protected function calTfIdf(){
-        $tf_idf = new TF_IDF($this->language, 0.5, false);
+        $tf_idf = new TF_IDF($this->language);
 
         $text = '';
 
@@ -249,24 +249,30 @@ class Document
         return $text;
     }
 
-    public function findMaxHeightBox(Page $page){
+    public function findTitleBox(Page $page){
+        $max_tf_idf = null;
+
+        foreach($page->boxes as $box) {
+            if(!$max_tf_idf || $box->tf_idf > $max_tf_idf) $max_tf_idf = $box->tf_idf;
+        }
+
+        if(!$max_tf_idf) throw new \Exception('Can not get max tf idf!');
+
         //lấy các box có chiều cao lớn nhất
-        $boxes = array_filter($page->boxes, function($box) {return $this->filterBox($box);});
+        $boxes = array_filter($page->boxes, function($box) use($max_tf_idf) {return $this->filterBox($box, $max_tf_idf);});
 
         usort($boxes, array($this, 'sortBox'));
 
         $max_box = null;
 
         foreach($boxes as $box){
-            if(!$max_box) $max_box = $box;
-
-            if($box->tf_idf > $max_box->tf_idf) $max_box = $box;
+            if(!$max_box || $box->tf_idf > $max_box->tf_idf) $max_box = $box;
         }
 
         return $max_box;
     }
 
-    protected function filterBox(Box $box){
+    protected function filterBox(Box $box, $max_tf_idf){
         $check = $this->detector->check($box->text_content);
         if($check['success'] == 'false') return false;
 
@@ -281,7 +287,7 @@ class Document
 
             if($box->average_font_size > $this->normal_font_size) return true;
 
-            if($box->tf_idf > 3) return true;
+            if($box->tf_idf >= $max_tf_idf - 0.5) return true;
         }
 
         return false;
