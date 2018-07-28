@@ -93,6 +93,6 @@ trait FileUtils {
 
 
     function __destruct() {
-//        $this->clearTmp();
+        $this->clearTmp();
     }
 }

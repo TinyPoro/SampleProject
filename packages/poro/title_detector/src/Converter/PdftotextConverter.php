@@ -115,7 +115,7 @@ class PdftotextConverter extends CanRunCommand {
 	}
 
 	function __destruct() {
-//		self::clean($this);
+		self::clean($this);
 	}
 
 
