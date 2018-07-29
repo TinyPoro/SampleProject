@@ -197,7 +197,11 @@ class Document
         foreach ($this->pages as $page){
             if($page->number > 2) break;
 
-            $max_box = $this->findTitleBox($page);
+            try{
+                $max_box = $this->findTitleBox($page);
+            }catch (\Exception $e){
+                echo "Exception detect title: ".$e->getMessage(). "\n";
+            }
 
             if($max_box) break;
         }
@@ -227,6 +231,7 @@ class Document
                 /** @var $box Box */
                 $terms = explode(' ', $this->standardText($box->text_content));
                 $terms = array_filter($terms);
+                $terms = array_unique($terms);
 
                 foreach($terms as $term){
                     $box->tf_idf += $tf_idf->getTfIdf($term, $this->docId);
@@ -262,15 +267,36 @@ class Document
 
         if(!$max_tf_idf) throw new \Exception('Can not get max tf idf!');
 
-        //lấy các box có chiều cao lớn nhất
+        //lấy các box thỏa mãn điều kiện là 1 title
         $boxes = array_filter($boxes, function($box) use($max_tf_idf) {return $this->filterBox($box, $max_tf_idf);});
 
-        usort($boxes, array($this, 'sortBox'));
+        try{
+            $min_tf_idfs = $this->getMinBoxAttributes($boxes, 'tf_idf');
+            $min_font_sizes = $this->getMinBoxAttributes($boxes, 'average_font_size');
+        }catch (\Exception $e){
+            throw new \Exception($e->getMessage());
+        }
+
+        //tính điểm cho từng box theo xếp hạng tf_idf và font_size
+        foreach($boxes as $box){
+            /** @var  $box Box */
+            $tf_idf_score = $box->tf_idf / $min_tf_idfs;
+            $font_size_score = $box->average_font_size / $min_font_sizes;
+
+            $box->score += $tf_idf_score + $font_size_score;
+        }
 
         $max_box = null;
 
         foreach($boxes as $box){
-            if(!$max_box || $box->tf_idf > $max_box->tf_idf) $max_box = $box;
+            if(!$max_box) $max_box = $box;
+
+            if($box->score > $max_box->score) $max_box = $box;
+
+            //nếu có score bằng nhau thì chọn cái có tf.idf lớn hơn
+            if($box->score == $max_box->score) {
+                if($box->tf_idf > $max_box->tf_idf) $max_box = $box;
+            }
         }
 
         return $max_box;
@@ -280,6 +306,10 @@ class Document
         if(str_word_count($box->text_content) < 2) return false;
 
         if(preg_match('/^[a-záàãảạăắằẵẳặâấầẫảạđéèẻẽẹêểếềệễíìĩỉịôốổồỗộơớờởỡợóòỏõọuúùũủụưứừửựữýỳỷỹỵ]/u', $box->text_content)) return false;
+
+        if($box->tf_idf == 0) return false;
+
+        if($box->average_font_size == 0) return false;
 
         if($box->tf_idf >= $max_tf_idf - 0.5) return true;
 
@@ -294,12 +324,15 @@ class Document
         return false;
     }
 
-    public function sortBox(Box $b1, Box $b2) {
-        $average_font_size1 = $b1->average_font_size;
-        $average_font_size2 = $b2->average_font_size;
+    public function getMinBoxAttributes($boxes, $attr){
+        $min_attr = null;
 
-        if($average_font_size1 == $average_font_size2) return ($b1->bottom < $b2->bottom) ? -1 : 1;
+        foreach($boxes as $box){
+            if(!$min_attr || $box->$attr < $min_attr) $min_attr = $box->$attr;
+        }
 
-        return ($average_font_size1 < $average_font_size2) ? 1 : -1;
+        if(!$min_attr) throw new \Exception("Can not get min attribute value!");
+
+        return $min_attr;
     }
 }
