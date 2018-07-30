@@ -199,7 +199,14 @@ class Document
             $page->boxes = array_filter($page->boxes, function($box) {return $this->detector->check($box->text_content)['success'] == 'true';});
         }
 
+        $haveHigherBox = $this->haveHigherBox();
+
         $this->detectMaxTfIdf();
+
+        foreach($this->pages as $page){
+            //lấy các box thỏa mãn điều kiện là 1 title
+            $page->boxes = array_filter($page->boxes, function($box) use($haveHigherBox) {return $this->filterBox($box, $haveHigherBox);});
+        }
 
         $max_box = null;
 
@@ -216,7 +223,7 @@ class Document
         }
 
         if($max_box) dump($max_box->text_content."\n");
-        else echo "Can not detect title!\n";
+        else dump("Can not detect title!\n");
     }
 
     protected function calTfIdf(){
@@ -251,6 +258,16 @@ class Document
         }
     }
 
+    public function haveHigherBox(){
+        foreach($this->pages as $page){
+            foreach($page->boxes as $box){
+                if($box->average_font_size > $this->normal_font_size) return true;
+            }
+        }
+
+        return false;
+    }
+
     public function detectMaxTfIdf(){
         if(count($this->pages) == 0) throw new \Exception('Can not get max tf_idf');
 
@@ -282,8 +299,7 @@ class Document
     }
 
     public function findTitleBox(Page $page){
-        //lấy các box thỏa mãn điều kiện là 1 title
-        $boxes = array_filter($page->boxes, function($box) {return $this->filterBox($box);});
+        $boxes = $page->boxes;
 
         try{
             $min_tf_idfs = $this->getMinBoxAttributes($boxes, 'tf_idf');
@@ -317,7 +333,7 @@ class Document
         return $max_box;
     }
 
-    protected function filterBox(Box $box){
+    protected function filterBox(Box $box, $haveHigherBox){
         if(str_word_count($box->text_content) < 2) return false;
 
         if(preg_match('/^[a-záàãảạăắằẵẳặâấầẫảạđéèẻẽẹêểếềệễíìĩỉịôốổồỗộơớờởỡợóòỏõọuúùũủụưứừửựữýỳỷỹỵ]/u', $box->text_content)) return false;
@@ -326,7 +342,9 @@ class Document
 
         if($box->average_font_size == 0) return false;
 
-        if($box->tf_idf >= $this->max_tf_idf - 0.5 || $box->tf_idf > 5) return true;
+        if(!$haveHigherBox){
+            if($box->tf_idf >= $this->max_tf_idf - 0.5 || $box->tf_idf > 5) return true;
+        }
 
         if($box->average_font_size > ($this->max_font_size*0.7)){
             if($box->center) return true;
