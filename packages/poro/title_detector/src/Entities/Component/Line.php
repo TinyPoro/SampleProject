@@ -16,14 +16,17 @@ class Line extends Component
     public $font_size;
 
     public $bold = false;
+    public $italic = false;
 
     const BOLD_PATTERN = '/(\s*(<b>)(\s*[^\s]\s*)+(<\/b>)\s*)+/ui';
+    const ITALIC_PATTERN = '/(\s*(<i>)(\s*[^\s]\s*)+(<\/i>)\s*)+/ui';
 
     public function __construct($content, $html_content, $top, $left, $right, $bottom, $font_size = 0, $page) {
         $this->text_content = $content;
         $this->html_content = $html_content;
 
         if(preg_match(self::BOLD_PATTERN, $html_content)) $this->bold = true;
+        if(preg_match(self::ITALIC_PATTERN, $html_content)) $this->italic = true;
 
         parent::__construct($top, $left, $right, $bottom, $page);
 
