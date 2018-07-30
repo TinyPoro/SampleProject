@@ -19,7 +19,6 @@ class Box extends Component
     public $same_left=false;
 
     public $bold=false;
-    public $italic=false;
 
     public $tf_idf=0;
 
@@ -43,10 +42,6 @@ class Box extends Component
 
         if(!$this->bold && count($this->lines)==1){
             if($line->bold) $this->bold = true;
-        }
-
-        if(!$this->italic && count($this->lines)==1){
-            if($line->italic) $this->italic = true;
         }
 
         if(!$this->average_height) $this->average_height = $line->height;
