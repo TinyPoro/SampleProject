@@ -12,7 +12,7 @@
         "laravel/tinker": "~1.0",
         "symfony/dom-crawler": "^4.1",
         "poro/language-detection": "^1.0",
-        "tinyporo/tf_idf": "1.0.*"
+        "tinyporo/tf_idf": "^1.0"
     },
     "require-dev": {
         "filp/whoops": "~2.0",
