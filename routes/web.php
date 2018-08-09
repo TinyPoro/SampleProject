@@ -14,3 +14,5 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('document/show/{document}', 'Controller@showDocument')->name('show.document');

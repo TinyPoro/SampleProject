@@ -10,4 +10,11 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+
+    public function showDocument($document){
+        $storage_path = env('STORAGE_PATH', storage_path('06_04'));
+        $pathToFile = $storage_path."/$document.pdf";
+        if(file_exists($pathToFile)) return response()->file($pathToFile);
+        else return "file đã bị xóa";
+    }
 }

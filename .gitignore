@@ -2,7 +2,11 @@
 /public/hot
 /public/storage
 /storage/*.key
-/storage/
+/storage/app
+/storage/sample
+/storage/input
+/storage/tmp
+/storage/logs
 /vendor
 /.idea
 /.vagrant
